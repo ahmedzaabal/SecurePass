@@ -7,7 +7,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QLineEdit, QTextEdit, QMessageBox,
                              QMenuBar, QMenu, QStatusBar, QSplitter,
                              QDialog, QFormLayout, QDialogButtonBox,
-                             QSpinBox, QCheckBox, QProgressBar)
+                             QSpinBox, QCheckBox, QProgressBar, QFrame,
+                             QScrollArea)
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction, QIcon, QFont
 import pyperclip
@@ -15,6 +16,7 @@ import time
 
 from core.vault import Vault
 from ui.lock_screen import LockScreen
+from ui.styles import Styles
 from utils.password_generator import PasswordGenerator
 
 class AddEditDialog(QDialog):
@@ -28,17 +30,46 @@ class AddEditDialog(QDialog):
     
     def init_ui(self):
         self.setWindowTitle("Add Entry" if self.entry is None else "Edit Entry")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(450)
+        self.setMinimumHeight(500)
         
-        layout = QFormLayout()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        
+        # Title
+        title = QLabel("Add New Entry" if self.entry is None else "Edit Entry")
+        title.setObjectName("cardTitle")
+        title_font = QFont()
+        title_font.setPointSize(14)
+        title_font.setBold(True)
+        title.setFont(title_font)
+        layout.addWidget(title)
+        
+        form_layout = QFormLayout()
+        form_layout.setSpacing(12)
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         
         self.title_input = QLineEdit()
+        self.title_input.setPlaceholderText("e.g., Google, GitHub")
+        self.title_input.setMinimumHeight(40)
+        
         self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Email or username")
+        self.username_input.setMinimumHeight(40)
+        
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.setPlaceholderText("Password")
+        self.password_input.setMinimumHeight(40)
+        
         self.url_input = QLineEdit()
+        self.url_input.setPlaceholderText("https://example.com")
+        self.url_input.setMinimumHeight(40)
+        
         self.notes_input = QTextEdit()
-        self.notes_input.setMaximumHeight(80)
+        self.notes_input.setPlaceholderText("Additional notes...")
+        self.notes_input.setMinimumHeight(80)
         
         if self.entry:
             self.title_input.setText(self.entry.get('title', ''))
@@ -47,30 +78,42 @@ class AddEditDialog(QDialog):
             self.url_input.setText(self.entry.get('url', ''))
             self.notes_input.setPlainText(self.entry.get('notes', ''))
         
-        layout.addRow("Title:", self.title_input)
-        layout.addRow("Username/Email:", self.username_input)
-        layout.addRow("Password:", self.password_input)
-        layout.addRow("URL:", self.url_input)
-        layout.addRow("Notes:", self.notes_input)
+        form_layout.addRow("Title", self.title_input)
+        form_layout.addRow("Username/Email", self.username_input)
+        form_layout.addRow("Password", self.password_input)
+        form_layout.addRow("URL", self.url_input)
+        form_layout.addRow("Notes", self.notes_input)
+        
+        layout.addLayout(form_layout)
         
         # Password generator
         gen_layout = QHBoxLayout()
-        self.gen_btn = QPushButton("Generate Password")
+        gen_layout.setSpacing(8)
+        self.gen_btn = QPushButton("🎲 Generate Password")
+        self.gen_btn.setObjectName("secondaryBtn")
         self.gen_btn.clicked.connect(self.generate_password)
-        self.show_btn = QPushButton("Show/Hide")
+        self.show_btn = QPushButton("👁 Show/Hide")
+        self.show_btn.setObjectName("secondaryBtn")
         self.show_btn.clicked.connect(self.toggle_password)
         gen_layout.addWidget(self.gen_btn)
         gen_layout.addWidget(self.show_btn)
         gen_layout.addStretch()
-        layout.addRow("", gen_layout)
+        layout.addLayout(gen_layout)
+        
+        layout.addStretch()
         
         # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setObjectName("secondaryBtn")
+        cancel_btn.clicked.connect(self.reject)
+        save_btn = QPushButton("Save")
+        save_btn.clicked.connect(self.accept)
+        button_layout.addStretch()
+        button_layout.addWidget(cancel_btn)
+        button_layout.addWidget(save_btn)
+        layout.addLayout(button_layout)
         
         self.setLayout(layout)
     
@@ -112,13 +155,13 @@ class MainWindow(QMainWindow):
     
     def init_ui(self):
         self.setWindowTitle("SecurePass")
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(900, 650)
         
         # Menu bar
         menubar = self.menuBar()
         file_menu = menubar.addMenu("&File")
         
-        lock_action = QAction("&Lock Vault", self)
+        lock_action = QAction("🔒 &Lock Vault", self)
         lock_action.setShortcut("Ctrl+L")
         lock_action.triggered.connect(self.lock_vault)
         file_menu.addAction(lock_action)
@@ -131,13 +174,13 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exit_action)
         
         edit_menu = menubar.addMenu("&Edit")
-        add_action = QAction("&Add Entry", self)
+        add_action = QAction("➕ &Add Entry", self)
         add_action.setShortcut("Ctrl+N")
         add_action.triggered.connect(self.add_entry)
         edit_menu.addAction(add_action)
         
         tools_menu = menubar.addMenu("&Tools")
-        gen_action = QAction("&Password Generator", self)
+        gen_action = QAction("🎲 &Password Generator", self)
         gen_action.triggered.connect(self.show_password_generator)
         tools_menu.addAction(gen_action)
         
@@ -145,11 +188,12 @@ class MainWindow(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout(self.central_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         
         # Status bar
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
-        self.status_label = QLabel("Locked")
+        self.status_label = QLabel("🔒 Locked")
         self.statusBar.addWidget(self.status_label)
     
     def show_lock_screen(self):
@@ -183,33 +227,56 @@ class MainWindow(QMainWindow):
         self.master_password = master_password
         self.clear_main_area()
         self.setup_main_ui()
-        self.status_label.setText(f"Unlocked - {len(self.vault.get_entries())} entries")
+        self.status_label.setText(f"🔓 Unlocked • {len(self.vault.get_entries())} entries")
         self.start_inactivity_timer()
     
     def setup_main_ui(self):
         """Setup main UI when vault is unlocked"""
+        container = QWidget()
+        container_layout = QHBoxLayout(container)
+        container_layout.setContentsMargins(12, 12, 12, 12)
+        container_layout.setSpacing(12)
+        
         splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setHandleWidth(1)
         
         # Left panel - entry list
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(5, 5, 5, 5)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(12)
+        
+        # Header
+        left_header = QLabel("My Vault")
+        left_header.setObjectName("cardTitle")
+        header_font = QFont()
+        header_font.setPointSize(12)
+        header_font.setBold(True)
+        left_header.setFont(header_font)
+        left_layout.addWidget(left_header)
         
         # Search
-        search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search entries...")
+        self.search_input.setPlaceholderText("🔍 Search entries...")
+        self.search_input.setMinimumHeight(38)
         self.search_input.textChanged.connect(self.filter_entries)
-        search_layout.addWidget(self.search_input)
-        left_layout.addLayout(search_layout)
+        left_layout.addWidget(self.search_input)
         
-        # Entry list
+        # Entry list card
+        list_card = QFrame()
+        list_card.setObjectName("card")
+        list_card_layout = QVBoxLayout(list_card)
+        list_card_layout.setContentsMargins(6, 6, 6, 6)
+        
         self.entry_list = QListWidget()
+        self.entry_list.setFrameShape(QListWidget.Shape.NoFrame)
         self.entry_list.itemClicked.connect(self.show_entry_details)
-        left_layout.addWidget(self.entry_list)
+        list_card_layout.addWidget(self.entry_list)
+        left_layout.addWidget(list_card)
         
         # Add button
-        add_btn = QPushButton("+ Add Entry")
+        add_btn = QPushButton("➕ Add Entry")
+        add_btn.setMinimumHeight(38)
         add_btn.clicked.connect(self.add_entry)
         left_layout.addWidget(add_btn)
         
@@ -218,69 +285,118 @@ class MainWindow(QMainWindow):
         # Right panel - entry details
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
-        right_layout.setContentsMargins(10, 10, 10, 10)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(12)
         
-        self.detail_title = QLabel("Select an entry")
-        detail_font = QFont()
-        detail_font.setPointSize(16)
-        detail_font.setBold(True)
-        self.detail_title.setFont(detail_font)
-        right_layout.addWidget(self.detail_title)
+        # Details header
+        details_header = QLabel("Entry Details")
+        details_header.setObjectName("cardTitle")
+        details_header.setFont(header_font)
+        right_layout.addWidget(details_header)
         
-        # Username
-        right_layout.addWidget(QLabel("<b>Username/Email:</b>"))
+        # Details card
+        details_card = QFrame()
+        details_card.setObjectName("card")
+        details_card_layout = QVBoxLayout(details_card)
+        details_card_layout.setContentsMargins(24, 24, 24, 24)
+        details_card_layout.setSpacing(16)
+        
+        self.detail_title = QLabel("Select an entry to view details")
+        title_font = QFont()
+        title_font.setPointSize(16)
+        title_font.setBold(True)
+        self.detail_title.setFont(title_font)
+        self.detail_title.setWordWrap(True)
+        details_card_layout.addWidget(self.detail_title)
+        
+        # Divider
+        divider1 = QFrame()
+        divider1.setObjectName("divider")
+        divider1.setFrameShape(QFrame.Shape.HLine)
+        details_card_layout.addWidget(divider1)
+        
+        # Username section
+        user_section = QLabel("USERNAME / EMAIL")
+        user_section.setObjectName("sectionLabel")
+        details_card_layout.addWidget(user_section)
         self.detail_username = QLabel("")
         self.detail_username.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        right_layout.addWidget(self.detail_username)
+        self.detail_username.setWordWrap(True)
+        self.detail_username.setStyleSheet("font-size: 10pt;")
+        details_card_layout.addWidget(self.detail_username)
         copy_user_btn = QPushButton("Copy Username")
+        copy_user_btn.setObjectName("secondaryBtn")
+        copy_user_btn.setFixedWidth(150)
         copy_user_btn.clicked.connect(self.copy_username)
-        right_layout.addWidget(copy_user_btn)
+        details_card_layout.addWidget(copy_user_btn)
         
-        # Password
-        right_layout.addWidget(QLabel("<b>Password:</b>"))
-        self.detail_password = QLabel("••••••••")
+        # Password section
+        pwd_section = QLabel("PASSWORD")
+        pwd_section.setObjectName("sectionLabel")
+        details_card_layout.addWidget(pwd_section)
+        self.detail_password = QLabel("••••••••••••")
         self.detail_password.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        right_layout.addWidget(self.detail_password)
+        self.detail_password.setStyleSheet("font-size: 10pt; font-family: monospace;")
+        details_card_layout.addWidget(self.detail_password)
         pwd_btn_layout = QHBoxLayout()
+        pwd_btn_layout.setSpacing(8)
         copy_pwd_btn = QPushButton("Copy Password")
+        copy_pwd_btn.setObjectName("secondaryBtn")
         copy_pwd_btn.clicked.connect(self.copy_password)
         show_pwd_btn = QPushButton("Show/Hide")
+        show_pwd_btn.setObjectName("secondaryBtn")
         show_pwd_btn.clicked.connect(self.toggle_detail_password)
         pwd_btn_layout.addWidget(copy_pwd_btn)
         pwd_btn_layout.addWidget(show_pwd_btn)
-        right_layout.addLayout(pwd_btn_layout)
+        pwd_btn_layout.addStretch()
+        details_card_layout.addLayout(pwd_btn_layout)
         
-        # URL
-        right_layout.addWidget(QLabel("<b>URL:</b>"))
+        # URL section
+        url_section = QLabel("WEBSITE URL")
+        url_section.setObjectName("sectionLabel")
+        details_card_layout.addWidget(url_section)
         self.detail_url = QLabel("")
         self.detail_url.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        right_layout.addWidget(self.detail_url)
+        self.detail_url.setWordWrap(True)
+        self.detail_url.setStyleSheet("font-size: 10pt;")
+        details_card_layout.addWidget(self.detail_url)
         copy_url_btn = QPushButton("Copy URL")
+        copy_url_btn.setObjectName("secondaryBtn")
+        copy_url_btn.setFixedWidth(120)
         copy_url_btn.clicked.connect(self.copy_url)
-        right_layout.addWidget(copy_url_btn)
+        details_card_layout.addWidget(copy_url_btn)
         
-        # Notes
-        right_layout.addWidget(QLabel("<b>Notes:</b>"))
+        # Notes section
+        notes_section = QLabel("NOTES")
+        notes_section.setObjectName("sectionLabel")
+        details_card_layout.addWidget(notes_section)
         self.detail_notes = QTextEdit()
         self.detail_notes.setReadOnly(True)
-        self.detail_notes.setMaximumHeight(100)
-        right_layout.addWidget(self.detail_notes)
+        self.detail_notes.setMinimumHeight(100)
+        details_card_layout.addWidget(self.detail_notes)
+        
+        details_card_layout.addStretch()
         
         # Action buttons
         action_layout = QHBoxLayout()
-        edit_btn = QPushButton("Edit")
+        action_layout.setSpacing(8)
+        edit_btn = QPushButton("✏️ Edit")
+        edit_btn.setObjectName("secondaryBtn")
         edit_btn.clicked.connect(self.edit_entry)
-        delete_btn = QPushButton("Delete")
+        delete_btn = QPushButton("🗑️ Delete")
+        delete_btn.setObjectName("dangerBtn")
         delete_btn.clicked.connect(self.delete_entry)
+        action_layout.addStretch()
         action_layout.addWidget(edit_btn)
         action_layout.addWidget(delete_btn)
-        right_layout.addLayout(action_layout)
+        details_card_layout.addLayout(action_layout)
         
-        right_layout.addStretch()
+        right_layout.addWidget(details_card)
         splitter.addWidget(right_widget)
         
-        splitter.setSizes([250, 550])
-        self.main_layout.addWidget(splitter)
+        splitter.setSizes([280, 620])
+        container_layout.addWidget(splitter)
+        self.main_layout.addWidget(container)
         
         self.refresh_entry_list()
     
@@ -313,12 +429,12 @@ class MainWindow(QMainWindow):
         
         if entry:
             self.detail_title.setText(entry.get('title', 'Untitled'))
-            self.detail_username.setText(entry.get('username', ''))
+            self.detail_username.setText(entry.get('username', '') or "—")
             self.actual_password = entry.get('password', '')
-            self.detail_password.setText("••••••••")
+            self.detail_password.setText("••••••••••••")
             self.password_shown = False
-            self.detail_url.setText(entry.get('url', ''))
-            self.detail_notes.setPlainText(entry.get('notes', ''))
+            self.detail_url.setText(entry.get('url', '') or "—")
+            self.detail_notes.setPlainText(entry.get('notes', '') or "")
     
     def copy_username(self):
         if self.current_entry_id:
@@ -376,7 +492,7 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'password_shown'):
             self.password_shown = False
         if self.password_shown:
-            self.detail_password.setText("••••••••")
+            self.detail_password.setText("••••••••••••")
             self.password_shown = False
         else:
             if hasattr(self, 'actual_password'):
@@ -433,23 +549,43 @@ class MainWindow(QMainWindow):
     def show_password_generator(self):
         dialog = QDialog(self)
         dialog.setWindowTitle("Password Generator")
-        dialog.setMinimumWidth(350)
-        layout = QVBoxLayout()
+        dialog.setMinimumWidth(400)
+        dialog.setMinimumHeight(420)
         
-        length_label = QLabel("Length:")
+        layout = QVBoxLayout()
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        
+        title = QLabel("🎲 Password Generator")
+        title.setObjectName("cardTitle")
+        title_font = QFont()
+        title_font.setPointSize(14)
+        title_font.setBold(True)
+        title.setFont(title_font)
+        layout.addWidget(title)
+        
+        # Length
+        length_label = QLabel("Length")
+        length_label.setObjectName("sectionLabel")
+        layout.addWidget(length_label)
         length_spin = QSpinBox()
         length_spin.setRange(4, 64)
         length_spin.setValue(16)
-        layout.addWidget(length_label)
+        length_spin.setMinimumHeight(38)
         layout.addWidget(length_spin)
         
-        lower_check = QCheckBox("Lowercase (a-z)")
+        # Options
+        options_label = QLabel("CHARACTER OPTIONS")
+        options_label.setObjectName("sectionLabel")
+        layout.addWidget(options_label)
+        
+        lower_check = QCheckBox("Lowercase letters (a-z)")
         lower_check.setChecked(True)
-        upper_check = QCheckBox("Uppercase (A-Z)")
+        upper_check = QCheckBox("Uppercase letters (A-Z)")
         upper_check.setChecked(True)
-        digit_check = QCheckBox("Digits (0-9)")
+        digit_check = QCheckBox("Numbers (0-9)")
         digit_check.setChecked(True)
-        symbol_check = QCheckBox("Symbols (!@#$%...)")
+        symbol_check = QCheckBox("Symbols (!@#$%^&*)")
         symbol_check.setChecked(True)
         
         layout.addWidget(lower_check)
@@ -457,12 +593,17 @@ class MainWindow(QMainWindow):
         layout.addWidget(digit_check)
         layout.addWidget(symbol_check)
         
+        # Result
+        result_label = QLabel("GENERATED PASSWORD")
+        result_label.setObjectName("sectionLabel")
+        layout.addWidget(result_label)
         result_input = QLineEdit()
         result_input.setReadOnly(True)
-        layout.addWidget(QLabel("Generated Password:"))
+        result_input.setMinimumHeight(40)
+        result_input.setStyleSheet("font-family: monospace; font-size: 10pt;")
         layout.addWidget(result_input)
         
-        gen_btn = QPushButton("Generate")
+        gen_btn = QPushButton("Generate New Password")
         def generate():
             pwd = self.generator.generate(
                 length_spin.value(),
@@ -476,10 +617,13 @@ class MainWindow(QMainWindow):
         layout.addWidget(gen_btn)
         
         copy_btn = QPushButton("Copy to Clipboard")
+        copy_btn.setObjectName("secondaryBtn")
         def copy_gen():
             try:
                 if result_input.text():
                     pyperclip.copy(result_input.text())
+                    self.status_label.setText("Password copied to clipboard")
+                    QTimer.singleShot(2000, lambda: self.status_label.setText("🔓 Unlocked" if self.vault.is_unlocked else "🔒 Locked"))
             except:
                 QMessageBox.warning(dialog, "Clipboard Error", 
                     "Could not copy to clipboard.\n"
@@ -488,9 +632,12 @@ class MainWindow(QMainWindow):
         copy_btn.clicked.connect(copy_gen)
         layout.addWidget(copy_btn)
         
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
+        layout.addStretch()
+        
+        close_btn = QPushButton("Close")
+        close_btn.setObjectName("secondaryBtn")
+        close_btn.clicked.connect(dialog.reject)
+        layout.addWidget(close_btn)
         
         dialog.setLayout(layout)
         generate()
@@ -512,4 +659,4 @@ class MainWindow(QMainWindow):
             self.clear_main_area()
             self.show_lock_screen()
             self.lock_timer.stop()
-            self.status_label.setText("Locked")
+            self.status_label.setText("🔒 Locked")

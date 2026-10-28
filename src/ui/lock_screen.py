@@ -19,67 +19,85 @@ class LockScreen(QWidget):
         self.init_ui()
     
     def init_ui(self):
-        self.setWindowTitle("SecurePass - Unlock")
-        self.setFixedSize(400, 300)
+        self.setMinimumSize(450, 380)
+        self.setAutoFillBackground(True)
         
-        layout = QVBoxLayout()
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.setSpacing(20)
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(60, 60, 60, 60)
+        main_layout.addStretch()
+        
+        # Card
+        card = QFrame()
+        card.setObjectName("card")
+        card.setMaximumWidth(380)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(40, 40, 40, 40)
+        card_layout.setSpacing(16)
         
         # Title
-        title = QLabel("SecurePass")
+        title = QLabel("🔐 SecurePass")
         title_font = QFont()
-        title_font.setPointSize(24)
+        title_font.setPointSize(22)
         title_font.setBold(True)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
+        card_layout.addWidget(title)
         
         # Subtitle
         if self.vault_exists:
-            subtitle = QLabel("Enter your master password to unlock")
+            subtitle = QLabel("Enter your master password to unlock your vault")
         else:
-            subtitle = QLabel("Create your master password")
+            subtitle = QLabel("Create a master password to secure your vault")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("color: #666;")
-        layout.addWidget(subtitle)
+        subtitle.setWordWrap(True)
+        subtitle.setStyleSheet("color: #a1a1aa;")
+        card_layout.addWidget(subtitle)
+        
+        card_layout.addSpacing(10)
         
         # Password input
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setPlaceholderText("Master Password")
-        self.password_input.setMinimumHeight(35)
+        self.password_input.setMinimumHeight(42)
         self.password_input.returnPressed.connect(self.handle_submit)
-        layout.addWidget(self.password_input)
+        card_layout.addWidget(self.password_input)
         
         # Confirm password (only for new vault)
         if not self.vault_exists:
             self.confirm_input = QLineEdit()
             self.confirm_input.setEchoMode(QLineEdit.EchoMode.Password)
             self.confirm_input.setPlaceholderText("Confirm Master Password")
-            self.confirm_input.setMinimumHeight(35)
+            self.confirm_input.setMinimumHeight(42)
             self.confirm_input.returnPressed.connect(self.handle_submit)
-            layout.addWidget(self.confirm_input)
-            warning = QLabel("⚠️ If you forget this password, your data cannot be recovered!")
+            card_layout.addWidget(self.confirm_input)
+            warning = QLabel("⚠️ If you forget your master password, your data cannot be recovered.")
             warning.setWordWrap(True)
-            warning.setStyleSheet("color: #d33; font-size: 9pt;")
+            warning.setStyleSheet("color: #f59e0b; font-size: 8pt;")
             warning.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(warning)
-        else:
-            layout.addSpacing(30)
+            card_layout.addWidget(warning)
+        
+        card_layout.addSpacing(10)
         
         # Submit button
         if self.vault_exists:
-            self.submit_btn = QPushButton("Unlock")
+            self.submit_btn = QPushButton("Unlock Vault")
         else:
             self.submit_btn = QPushButton("Create Vault")
-        self.submit_btn.setMinimumHeight(35)
+        self.submit_btn.setMinimumHeight(42)
         self.submit_btn.clicked.connect(self.handle_submit)
         self.submit_btn.setDefault(True)
-        layout.addWidget(self.submit_btn)
+        card_layout.addWidget(self.submit_btn)
         
-        layout.addStretch()
-        self.setLayout(layout)
+        # Center card
+        card_container = QHBoxLayout()
+        card_container.addStretch()
+        card_container.addWidget(card)
+        card_container.addStretch()
+        main_layout.addLayout(card_container)
+        main_layout.addStretch()
+        
+        self.setLayout(main_layout)
     
     def handle_submit(self):
         password = self.password_input.text()

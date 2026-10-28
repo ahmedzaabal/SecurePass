@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
 from ui.main_window import MainWindow
-from core.vault import Vault
+from ui.styles import Styles
 
 def main():
     # Enable high DPI scaling
@@ -27,8 +27,8 @@ def main():
     app.setOrganizationName("SecurePass")
     app.setApplicationVersion("1.0.0")
     
-    # Set application style
-    app.setStyle('Fusion')
+    # Apply modern dark theme
+    Styles.apply(app, theme='dark')
     
     # Create and show main window
     window = MainWindow()
